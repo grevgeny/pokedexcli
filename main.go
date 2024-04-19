@@ -12,16 +12,10 @@ type replCommand struct {
 	callback    func() error
 }
 
-func commandHelp() error {
-	panic("")
-}
+var commands map[string]replCommand
 
-func commandExit() error {
-	panic("")
-}
-
-func getCommands() map[string]replCommand {
-	return map[string]replCommand{
+func init() {
+	commands = map[string]replCommand{
 		"help": {
 			name:        "help",
 			description: "Displays a help message",
@@ -31,18 +25,41 @@ func getCommands() map[string]replCommand {
 			name:        "exit",
 			description: "Exit the Pokedex",
 			callback:    commandExit,
-		}}
+		},
+	}
+}
+
+func commandHelp() error {
+	fmt.Print("\nWelcome to the Pokedex\nUsage:\n\n")
+	for _, c := range commands {
+		fmt.Printf("%s: %s\n", c.name, c.description)
+	}
+	fmt.Println()
+	return nil
+}
+
+func commandExit() error {
+	os.Exit(0)
+	return nil
 }
 
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Print("Pokedex > ")
-	for scanner.Scan() {
-		fmt.Println(scanner.Text())
+	for {
 		fmt.Print("Pokedex > ")
-	}
+		if !scanner.Scan() {
+			break
+		}
+		input := scanner.Text()
 
-	if err := scanner.Err(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading input: %s", err)
+		c, ok := commands[input]
+		if !ok {
+			fmt.Print("\nCommand not supported! Type 'help' to see available commands.\n\n")
+			continue
+		}
+
+		if err := c.callback(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error executing command: %s", err)
+		}
 	}
 }
