@@ -52,9 +52,9 @@ func commandMapb(cfg *config) error {
 }
 
 type replCommand struct {
+	callback    func(*config) error
 	name        string
 	description string
-	callback    func(*config) error
 }
 
 func getCommands() map[string]replCommand {
