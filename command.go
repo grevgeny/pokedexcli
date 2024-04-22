@@ -5,6 +5,37 @@ import (
 	"os"
 )
 
+type replCommand struct {
+	callback    func(*config) error
+	name        string
+	description string
+}
+
+func getCommands() map[string]replCommand {
+	return map[string]replCommand{
+		"help": {
+			name:        "help",
+			description: "Displays a help message",
+			callback:    commandHelp,
+		},
+		"map": {
+			name:        "map",
+			description: "Get the next page of locations",
+			callback:    commandMap,
+		},
+		"mapb": {
+			name:        "mapb",
+			description: "Get the previous page of locations",
+			callback:    commandMapb,
+		},
+		"exit": {
+			name:        "exit",
+			description: "Exit the Pokedex",
+			callback:    commandExit,
+		},
+	}
+}
+
 func commandHelp(cfg *config) error {
 	fmt.Print("\nWelcome to the Pokedex\nUsage:\n\n")
 	for _, c := range getCommands() {
@@ -49,35 +80,4 @@ func commandMapb(cfg *config) error {
 	}
 
 	return nil
-}
-
-type replCommand struct {
-	callback    func(*config) error
-	name        string
-	description string
-}
-
-func getCommands() map[string]replCommand {
-	return map[string]replCommand{
-		"help": {
-			name:        "help",
-			description: "Displays a help message",
-			callback:    commandHelp,
-		},
-		"map": {
-			name:        "map",
-			description: "Get the next page of locations",
-			callback:    commandMap,
-		},
-		"mapb": {
-			name:        "mapb",
-			description: "Get the previous page of locations",
-			callback:    commandMapb,
-		},
-		"exit": {
-			name:        "exit",
-			description: "Exit the Pokedex",
-			callback:    commandExit,
-		},
-	}
 }
