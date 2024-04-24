@@ -1,10 +1,5 @@
 package pokeapi
 
-import (
-	"encoding/json"
-	"io"
-)
-
 type Locations struct {
 	Next         *string    `json:"next,omitempty"`
 	Previous     *string    `json:"previous,omitempty"`
@@ -23,34 +18,12 @@ type Location struct {
 func (client *Client) FetchOneLocation(locationName string) (Location, error) {
 	url := baseURL + "/location-area/" + locationName
 
-	var l Location
-
-	if value, ok := client.cache.Get(url); ok {
-		err := json.Unmarshal(value, &l)
-		if err != nil {
-			return Location{}, err
-		}
-		return l, nil
-	}
-
-	res, err := client.Get(url)
-	if err != nil {
-		return Location{}, nil
-	}
-	defer res.Body.Close()
-
-	data, err := io.ReadAll(res.Body)
-	if err != nil {
+	var loc Location
+	if err := client.fetchData(url, &loc, true); err != nil {
 		return Location{}, err
 	}
 
-	if err := json.Unmarshal(data, &l); err != nil {
-		return Location{}, err
-	}
-
-	client.cache.Add(url, data)
-
-	return l, nil
+	return loc, nil
 }
 
 func (client *Client) FetchLocations(pageURL *string) (Locations, error) {
@@ -59,32 +32,10 @@ func (client *Client) FetchLocations(pageURL *string) (Locations, error) {
 		url = *pageURL
 	}
 
-	var loc Locations
-
-	if value, ok := client.cache.Get(url); ok {
-		err := json.Unmarshal(value, &loc)
-		if err != nil {
-			return Locations{}, err
-		}
-		return loc, nil
-	}
-
-	res, err := client.Get(url)
-	if err != nil {
-		return Locations{}, err
-	}
-	defer res.Body.Close()
-
-	data, err := io.ReadAll(res.Body)
-	if err != nil {
+	var locs Locations
+	if err := client.fetchData(url, &locs, true); err != nil {
 		return Locations{}, err
 	}
 
-	if err := json.Unmarshal(data, &loc); err != nil {
-		return Locations{}, err
-	}
-
-	client.cache.Add(url, data)
-
-	return loc, nil
+	return locs, nil
 }
