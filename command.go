@@ -45,6 +45,11 @@ func getCommands() map[string]replCommand {
 			description: "Try to catch the Pokemon",
 			callback:    commandCatch,
 		},
+		"inspect": {
+			name:        "inspect <pokemon_name>",
+			description: "Get info about a catched Pokemon",
+			callback:    commandInspect,
+		},
 	}
 }
 
@@ -96,7 +101,7 @@ func commandMapb(cfg *config, params ...string) error {
 
 func commandExplore(cfg *config, params ...string) error {
 	if len(params) != 1 {
-		return errors.New("invalid number of arguments")
+		return errors.New("you must provide a Location name")
 	}
 
 	locationName := params[0]
@@ -117,13 +122,13 @@ func commandExplore(cfg *config, params ...string) error {
 
 func commandCatch(cfg *config, params ...string) error {
 	if len(params) != 1 {
-		return errors.New("invalid number of arguments")
+		return errors.New("you must provide a Pokemon name")
 	}
 
-	pokemonName := params[0]
-	fmt.Printf("Throwing a Pokeball at %s...\n", pokemonName)
+	name := params[0]
+	fmt.Printf("Throwing a Pokeball at %s...\n", name)
 
-	pokemon, err := cfg.pokeapiClient.FetchPokemonInfo(pokemonName)
+	pokemon, err := cfg.pokeapiClient.FetchPokemonInfo(name)
 	if err != nil {
 		return err
 	}
@@ -131,11 +136,41 @@ func commandCatch(cfg *config, params ...string) error {
 	const maxBaseExp = 608.0
 	catchProb := 1 - pokemon.BaseExp/maxBaseExp
 
-	if rand.Float64() < catchProb {
-		fmt.Printf("%s escaped!\n", pokemonName)
+	if rand.Float64() >= catchProb {
+		fmt.Printf("%s escaped!\n", name)
 	} else {
-		fmt.Printf("%s was caught!\n", pokemonName)
-		cfg.catchedPokemons = append(cfg.catchedPokemons, pokemonName)
+		fmt.Printf("%s was caught!\n", name)
+		cfg.catchedPokemons[name] = pokemon
+	}
+
+	return nil
+}
+
+func commandInspect(cfg *config, params ...string) error {
+	if len(params) != 1 {
+		return errors.New("you must provide a Pokemon name")
+	}
+
+	name := params[0]
+
+	pokemon, ok := cfg.catchedPokemons[name]
+	if !ok {
+		fmt.Println("you have not caught that pokemon")
+		return nil
+	}
+
+	fmt.Printf("Name: %s\n", pokemon.Name)
+	fmt.Printf("Height: %d\n", pokemon.Height)
+	fmt.Printf("Weight: %d\n", pokemon.Weight)
+
+	fmt.Println("Stats:")
+	for _, s := range pokemon.Stats {
+		fmt.Printf("  -%s: %d\n", s.Stat.Name, s.BaseStat)
+	}
+
+	fmt.Println("Types:")
+	for _, t := range pokemon.Types {
+		fmt.Printf("  - %s\n", t.Type.Name)
 	}
 
 	return nil
