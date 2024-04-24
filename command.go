@@ -50,6 +50,11 @@ func getCommands() map[string]replCommand {
 			description: "Get info about a catched Pokemon",
 			callback:    commandInspect,
 		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "List all your caught Pokemons",
+			callback:    commandPokedex,
+		},
 	}
 }
 
@@ -140,6 +145,7 @@ func commandCatch(cfg *config, params ...string) error {
 		fmt.Printf("%s escaped!\n", name)
 	} else {
 		fmt.Printf("%s was caught!\n", name)
+		fmt.Println("You may now inspect it with the inspect command.")
 		cfg.catchedPokemons[name] = pokemon
 	}
 
@@ -171,6 +177,15 @@ func commandInspect(cfg *config, params ...string) error {
 	fmt.Println("Types:")
 	for _, t := range pokemon.Types {
 		fmt.Printf("  - %s\n", t.Type.Name)
+	}
+
+	return nil
+}
+
+func commandPokedex(cfg *config, params ...string) error {
+	fmt.Println("Your Pokedex:")
+	for _, p := range cfg.catchedPokemons {
+		fmt.Printf(" - %s\n", p.Name)
 	}
 
 	return nil
