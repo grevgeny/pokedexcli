@@ -8,7 +8,7 @@ import (
 )
 
 type replCommand struct {
-	callback    func(*config, []string) error
+	callback    func(*config, ...string) error
 	name        string
 	description string
 }
@@ -36,19 +36,19 @@ func getCommands() map[string]replCommand {
 			callback:    commandExit,
 		},
 		"explore": {
-			name:        "explore",
+			name:        "explore <location_name>",
 			description: "List of all the Pokemon in a given area",
 			callback:    commandExplore,
 		},
 		"catch": {
-			name:        "catch",
-			description: "Catch the Pokemon",
+			name:        "catch <pokemon_name>",
+			description: "Try to catch the Pokemon",
 			callback:    commandCatch,
 		},
 	}
 }
 
-func commandHelp(cfg *config, params []string) error {
+func commandHelp(cfg *config, params ...string) error {
 	fmt.Print("\nWelcome to the Pokedex\nUsage:\n\n")
 	for _, c := range getCommands() {
 		fmt.Printf("%s: %s\n", c.name, c.description)
@@ -57,12 +57,12 @@ func commandHelp(cfg *config, params []string) error {
 	return nil
 }
 
-func commandExit(cfg *config, params []string) error {
+func commandExit(cfg *config, params ...string) error {
 	os.Exit(0)
 	return nil
 }
 
-func commandMap(cfg *config, params []string) error {
+func commandMap(cfg *config, params ...string) error {
 	locations, err := cfg.pokeapiClient.FetchLocations(cfg.nextLocationsURL)
 	if err != nil {
 		return err
@@ -78,7 +78,7 @@ func commandMap(cfg *config, params []string) error {
 	return nil
 }
 
-func commandMapb(cfg *config, params []string) error {
+func commandMapb(cfg *config, params ...string) error {
 	locations, err := cfg.pokeapiClient.FetchLocations(cfg.prevLocationsURL)
 	if err != nil {
 		return err
@@ -94,7 +94,7 @@ func commandMapb(cfg *config, params []string) error {
 	return nil
 }
 
-func commandExplore(cfg *config, params []string) error {
+func commandExplore(cfg *config, params ...string) error {
 	if len(params) != 1 {
 		return errors.New("invalid number of arguments")
 	}
@@ -115,7 +115,7 @@ func commandExplore(cfg *config, params []string) error {
 	return nil
 }
 
-func commandCatch(cfg *config, params []string) error {
+func commandCatch(cfg *config, params ...string) error {
 	if len(params) != 1 {
 		return errors.New("invalid number of arguments")
 	}

@@ -13,6 +13,7 @@ type config struct {
 	nextLocationsURL *string
 	prevLocationsURL *string
 	pokeapiClient    pokeapi.Client
+	catchedPokemons  []string
 }
 
 func initREPL(cfg *config) {
@@ -22,13 +23,13 @@ func initREPL(cfg *config) {
 		if !scanner.Scan() {
 			break
 		}
-		input := scanner.Text()
-		inputSplit := strings.SplitN(input, " ", 2)
 
-		cmdName := inputSplit[0]
+		processedInput := processInput(scanner.Text())
+
+		cmdName := processedInput[0]
 		var params []string
-		if len(inputSplit) == 2 {
-			params = strings.Split(inputSplit[1], " ")
+		if len(processedInput) > 1 {
+			params = processedInput[1:]
 		}
 
 		command, ok := getCommands()[cmdName]
@@ -37,8 +38,13 @@ func initREPL(cfg *config) {
 			continue
 		}
 
-		if err := command.callback(cfg, params); err != nil {
-			fmt.Fprintf(os.Stderr, "Error executing command: %s", err)
+		if err := command.callback(cfg, params...); err != nil {
+			fmt.Fprintf(os.Stderr, "Error executing command: %s\n", err)
 		}
 	}
+}
+
+func processInput(input string) []string {
+	loweredInput := strings.ToLower(input)
+	return strings.Fields(loweredInput)
 }
