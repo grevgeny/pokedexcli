@@ -6,13 +6,51 @@ import (
 )
 
 type Locations struct {
-	Next     *string  `json:"next,omitempty"`
-	Previous *string  `json:"previous,omitempty"`
-	Results  []Result `json:"results,omitempty"`
+	Next         *string    `json:"next,omitempty"`
+	Previous     *string    `json:"previous,omitempty"`
+	LocationList []Location `json:"results,omitempty"`
 }
 
-type Result struct {
-	Name string `json:"name,omitempty"`
+type Location struct {
+	Name              string `json:"name"`
+	PokemonEncounters []struct {
+		Pokemon struct {
+			Name string `json:"name"`
+		} `json:"pokemon"`
+	} `json:"pokemon_encounters"`
+}
+
+func (client *Client) FetchOneLocation(locationName string) (Location, error) {
+	url := baseURL + "/location-area/" + locationName
+
+	var l Location
+
+	if value, ok := client.cache.Get(url); ok {
+		err := json.Unmarshal(value, &l)
+		if err != nil {
+			return Location{}, err
+		}
+		return l, nil
+	}
+
+	res, err := client.Get(url)
+	if err != nil {
+		return Location{}, nil
+	}
+	defer res.Body.Close()
+
+	data, err := io.ReadAll(res.Body)
+	if err != nil {
+		return Location{}, err
+	}
+
+	if err := json.Unmarshal(data, &l); err != nil {
+		return Location{}, err
+	}
+
+	client.cache.Add(url, data)
+
+	return l, nil
 }
 
 func (client *Client) FetchLocations(pageURL *string) (Locations, error) {
@@ -39,7 +77,7 @@ func (client *Client) FetchLocations(pageURL *string) (Locations, error) {
 
 	data, err := io.ReadAll(res.Body)
 	if err != nil {
-		return Locations{}, nil
+		return Locations{}, err
 	}
 
 	if err := json.Unmarshal(data, &loc); err != nil {
@@ -49,5 +87,4 @@ func (client *Client) FetchLocations(pageURL *string) (Locations, error) {
 	client.cache.Add(url, data)
 
 	return loc, nil
-
 }

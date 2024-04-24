@@ -1,12 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 )
 
 type replCommand struct {
-	callback    func(*config) error
+	callback    func(*config, []string) error
 	name        string
 	description string
 }
@@ -33,10 +34,15 @@ func getCommands() map[string]replCommand {
 			description: "Exit the Pokedex",
 			callback:    commandExit,
 		},
+		"explore": {
+			name:        "explore",
+			description: "List of all the Pokemon in a given area",
+			callback:    commandExplore,
+		},
 	}
 }
 
-func commandHelp(cfg *config) error {
+func commandHelp(cfg *config, params []string) error {
 	fmt.Print("\nWelcome to the Pokedex\nUsage:\n\n")
 	for _, c := range getCommands() {
 		fmt.Printf("%s: %s\n", c.name, c.description)
@@ -45,12 +51,12 @@ func commandHelp(cfg *config) error {
 	return nil
 }
 
-func commandExit(cfg *config) error {
+func commandExit(cfg *config, params []string) error {
 	os.Exit(0)
 	return nil
 }
 
-func commandMap(cfg *config) error {
+func commandMap(cfg *config, params []string) error {
 	locations, err := cfg.pokeapiClient.FetchLocations(cfg.nextLocationsURL)
 	if err != nil {
 		return err
@@ -59,14 +65,14 @@ func commandMap(cfg *config) error {
 	cfg.nextLocationsURL = locations.Next
 	cfg.prevLocationsURL = locations.Previous
 
-	for _, result := range locations.Results {
+	for _, result := range locations.LocationList {
 		fmt.Println(result.Name)
 	}
 
 	return nil
 }
 
-func commandMapb(cfg *config) error {
+func commandMapb(cfg *config, params []string) error {
 	locations, err := cfg.pokeapiClient.FetchLocations(cfg.prevLocationsURL)
 	if err != nil {
 		return err
@@ -75,8 +81,29 @@ func commandMapb(cfg *config) error {
 	cfg.nextLocationsURL = locations.Next
 	cfg.prevLocationsURL = locations.Previous
 
-	for _, result := range locations.Results {
-		fmt.Println(result.Name)
+	for _, location := range locations.LocationList {
+		fmt.Println(location.Name)
+	}
+
+	return nil
+}
+
+func commandExplore(cfg *config, params []string) error {
+	if len(params) != 1 {
+		return errors.New("invalid number of arguements")
+	}
+
+	locationName := params[0]
+	fmt.Printf("Exploring %s...\n", locationName)
+
+	location, err := cfg.pokeapiClient.FetchOneLocation(locationName)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Found Pokemon:")
+	for _, p := range location.PokemonEncounters {
+		fmt.Printf(" - %s\n", p.Pokemon.Name)
 	}
 
 	return nil
