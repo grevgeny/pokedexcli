@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 )
 
@@ -38,6 +39,11 @@ func getCommands() map[string]replCommand {
 			name:        "explore",
 			description: "List of all the Pokemon in a given area",
 			callback:    commandExplore,
+		},
+		"catch": {
+			name:        "catch",
+			description: "Catch the Pokemon",
+			callback:    commandCatch,
 		},
 	}
 }
@@ -90,7 +96,7 @@ func commandMapb(cfg *config, params []string) error {
 
 func commandExplore(cfg *config, params []string) error {
 	if len(params) != 1 {
-		return errors.New("invalid number of arguements")
+		return errors.New("invalid number of arguments")
 	}
 
 	locationName := params[0]
@@ -104,6 +110,32 @@ func commandExplore(cfg *config, params []string) error {
 	fmt.Println("Found Pokemon:")
 	for _, p := range location.PokemonEncounters {
 		fmt.Printf(" - %s\n", p.Pokemon.Name)
+	}
+
+	return nil
+}
+
+func commandCatch(cfg *config, params []string) error {
+	if len(params) != 1 {
+		return errors.New("invalid number of arguments")
+	}
+
+	pokemonName := params[0]
+	fmt.Printf("Throwing a Pokeball at %s...\n", pokemonName)
+
+	pokemon, err := cfg.pokeapiClient.FetchPokemonInfo(pokemonName)
+	if err != nil {
+		return err
+	}
+
+	const maxBaseExp = 608.0
+	catchProb := 1 - pokemon.BaseExp/maxBaseExp
+
+	if rand.Float64() < catchProb {
+		fmt.Printf("%s escaped!\n", pokemonName)
+	} else {
+		fmt.Printf("%s was caught!\n", pokemonName)
+		cfg.catchedPokemons = append(cfg.catchedPokemons, pokemonName)
 	}
 
 	return nil
